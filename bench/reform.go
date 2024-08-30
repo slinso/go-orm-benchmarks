@@ -2,8 +2,9 @@ package bench
 
 import (
 	"database/sql"
-	"github.com/efectn/go-orm-benchmarks/helper"
 	"testing"
+
+	"github.com/efectn/go-orm-benchmarks/helper"
 
 	r "github.com/efectn/go-orm-benchmarks/bench/reform"
 	_ "github.com/jackc/pgx/v4/stdlib"

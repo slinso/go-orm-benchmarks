@@ -2,9 +2,10 @@ package bench
 
 import (
 	"database/sql"
-	"github.com/efectn/go-orm-benchmarks/helper"
 	"strconv"
 	"testing"
+
+	"github.com/efectn/go-orm-benchmarks/helper"
 )
 
 const (
@@ -142,7 +143,7 @@ func (raw *Raw) Read(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var mout Model
 		err := raw.conn.QueryRow(rawSelectSQL, 1).Scan(
-			//err := stmt.QueryRow(m.Id).Scan(
+			// err := stmt.QueryRow(m.Id).Scan(
 			&mout.Id,
 			&mout.Name,
 			&mout.Title,

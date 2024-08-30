@@ -1,0 +1,77 @@
+{{- $conf := .Conf -}}
+{{- $table := .Table -}}
+{{- $schema := .Schema }}
+
+// Insert inserts the {{ $table.Title }} to the database.
+func ({{ $table.StoreReceiver }}) Insert(data *{{ $conf.RootPackage }}.{{ $table.Title }}) error {
+    var err error
+    sql := sdb.NewSQLStatement()
+
+    {{- range $i, $f := $table.Fields -}}
+		{{- if eq $f.Title "CreatedAt" }}
+		data.{{ $f.Title }} = stime.Now()
+		{{- else if eq $f.Title "UpdatedAt" }}
+		data.{{ $f.Title }} = stime.Now()
+		{{- else if and (eq (lower $f.Title) "uuid") $table.Audit }}
+		data.{{ $f.Title }} = s.ctx.SnowFlake.Generate().Int64()
+		{{- end -}}
+	{{- end -}}
+	
+	{{- if $schema.IsMultiTenant }}
+		sql.AppendRaw("INSERT INTO ", fmt.Sprintf("{{ $schema.MTSchemaFmt }}", {{ $table.Initials }}.{{ $schema.MTVarName }}), ".{{ $table.Name }} (")
+	{{- else }}
+		sql.AppendRaw("INSERT INTO {{ $schema.Name }}.{{ $table.Name }} (")
+	{{- end }}
+	fields := {{ $table.Title }}QueryFields({{ $table.Initials }}.colSet)
+	sql.Fields("", "", fields)
+	sql.Append(") VALUES (")
+	for i := range fields {
+	    if i > 0 {
+	        sql.Append(",")
+	    }
+	    sql.Append("?")
+	}
+	sql.Append(")")
+	
+	if {{ $table.Initials }}.log.Trace().Enabled() {
+	    {{ $table.Initials }}.log.Trace().Str("fn", "{{ $schema.Name }}.{{ $table.Name }}.Insert").Str("stmt", sql.String()).
+	    {{- zerologFields $table.Fields "data" -}}
+	    .Msg("sql")
+    }
+	{{- $tmp := (index $table.Fields (index $table.FieldMapping "id")) -}}
+	{{- if and $tmp.IsPrimaryKey $tmp.IsAutoincrement }}
+		res, err :=
+	{{- else }}
+		_, err = 
+	{{- end -}}
+    {{ $table.Initials }}.db.Exec(sql.Query(),
+    {{- range $i, $f := $table.Fields -}}
+		{{- if gt $i 0 -}}
+			, 
+		{{- end -}}
+		data.{{ $f.Title }}
+	{{- end -}}
+    )
+	if err != nil {
+		{{ $table.Initials }}.log.Error().Err(err).Msg("exec")
+		return err
+	}
+    
+	{{- if and $tmp.IsPrimaryKey $tmp.IsAutoincrement }}
+		// retrieve id
+	    id, err := res.LastInsertId()
+	    if err != nil {
+		    {{ $table.Initials }}.log.Error().Err(err).Msg("lastinsertid")
+		    return err
+	    }
+
+        // set primary key and existence
+        data.ID = 
+        {{- if eq $tmp.GoType "int64" -}}
+            id
+        {{- else -}}
+            int(id)
+        {{- end }}
+    {{ end }}
+	return nil
+}

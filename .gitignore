@@ -104,3 +104,5 @@ fabric.properties
 # vendor/
 
 .idea
+
+go-orm-benchmarks

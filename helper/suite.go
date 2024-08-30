@@ -58,7 +58,7 @@ func RunBenchmarks(orm ORMInterface, reports map[string]BenchmarkReport) (Benchm
 	}(orm)
 
 	var result BenchmarkResult
-	operations := []func(b *testing.B){orm.Insert, orm.InsertMulti, orm.Update, orm.Read, orm.ReadSlice}
+	operations := []func(b *testing.B){orm.Read, orm.ReadSlice}
 
 	result.ORM = orm.Name()
 	for _, operation := range operations {

@@ -1,0 +1,67 @@
+{{- $table := .Table }}
+{{- $schema := .Schema }}
+{{/*
+{{ range $fk := .Table.ForeignKeys }}
+	// Get{{ $fk.GenName }} fetches a record from referenced table '{{ $fk.RefTable }}'.
+  	{{- if $schema.IsMultiTenant }}
+		func ({{ $table.Receiver }}) Get{{ $fk.GenName}}({{ $schema.MTVarName }} {{ $schema.MTVarType }}, db Execer) error {
+	{{- else }}
+		func ({{ $table.Receiver }}) Get{{ $fk.GenName}}(db Execer) error {
+	{{- end}}
+		if {{ $table.Initials }}.{{ $fk.GenName }} == nil {
+		    var err error
+			{{- if $schema.IsMultiTenant }}
+				{{ $table.Initials }}.{{ $fk.GenName }}, err = New{{ $fk.GenTableName }}Store({{ $schema.MTVarName }}, db).{{ $fk.GenFuncName }}(
+			{{- else }}
+				{{ $table.Initials }}.{{ $fk.GenName }}, err = New{{ $fk.GenTableName }}Store(db).{{ $fk.GenFuncName }}(
+		    {{- end }}
+			{{- range $i, $xx := $fk.Fields -}}
+			    {{- if gt $i 0 -}}
+				    ,
+                {{- end -}}
+				{{- $tmp := (index $table.Fields (index $table.FieldMapping (index $fk.Fields $i))) -}}
+                {{- if $tmp.IsNullable }}*{{ end }}{{ $table.Initials }}.{{ $tmp.Title }}
+            {{- end -}}
+            )
+		    return err
+		}
+		return nil
+    }
+{{ end }}
+*/}}
+
+{{ range $fk := .Table.ForeignKeys }}
+	{{ if not $fk.IsUnique }}
+		// EagerFetch {{ $fk.CustomName }} eagerly fetches N records from referenced table '{{ $fk.RefTable }}'.
+		func ({{ $table.StoreReceiver }}) EagerFetch{{ $fk.CustomName}}(fkStore *{{ $fk.GenTableName }}Store, data []*{{ $conf.RootPackage }}.{{ $table.Title }}) error {
+			if len(data) == 0 {
+				return nil
+			}
+			
+			where := sdb.NewSQLStatement()
+			where.AppendRaw("{{ index $fk.RefFields 0 }} IN (")
+			for i, d := range data {
+				if i > 0 {
+					where.Append(",")
+				}
+				where.AppendInt(d.{{ (index $table.Fields (index $table.FieldMapping (index $fk.Fields 0))).Title }})
+			}
+			where.Append(")")
+
+			details, err := fkStore.Where(where.Query()).OrderBy("A.{{ index $fk.RefFields 0 }} DESC, A.{{ index $fk.Fields 0 }} DESC").Query()
+			if err != nil {
+				{{ $table.Initials }}.log.Error().Err(err).Msg("fetch details")
+				return err
+			}
+			for i := range data {
+				for j := len(details) - 1; j >= 0; j-- {
+					if details[j].{{ (index $fk.GenTable.Fields (index $fk.GenTable.FieldMapping (index $fk.RefFields 0))).Title }} == data[i].{{ (index $table.Fields (index $table.FieldMapping (index $fk.Fields 0))).Title }} {
+						data[i].{{ $fk.CustomName }} = append(data[i].{{ $fk.CustomName }}, details[j])
+						details = append(details[:j], details[j+1:]...)
+					}
+				}
+			}
+			return nil
+		}
+	{{ end }}
+{{ end }}

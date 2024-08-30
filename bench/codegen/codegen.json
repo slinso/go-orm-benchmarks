@@ -1,0 +1,16 @@
+{
+  "GoFmtCmd": "gofumports -w",
+  "Package": "mysql",
+  "RootPackage": "codegen",
+  "RootPackageInclude": "github.com/efectn/go-orm-benchmarks/codegen",
+  "DirOut": "/home/sl/gospace/go-orm-benchmarks/bench/codegen",
+  "SubPackage": "db",
+  "FilePattern": "%s.go",
+  "TemplateFolder": "/home/sl/gospace/go-orm-benchmarks/bench/codegen/templates/",
+  "Database": {
+    "DSN": "root:root@/?parseTime=true",
+    "Schemas": [
+      "orm_benchmark"
+    ]
+  }
+}

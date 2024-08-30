@@ -1,0 +1,27 @@
+{{ $conf := .Conf }}
+{{ $table := .Table }}
+// constant slice for all fields of the table "{{ .Table.Title }}".
+// nolint[gochecknoglobals]
+var {{ lower .Table.Title }}QueryFieldsAll = []string{
+	{{- range $i, $field := .Table.Fields }}
+    {{- if gt $i 0 }} , {{ end -}}
+    "{{ lower $field.Name }}"
+    {{- end -}}
+}
+
+// returns fields, that should be used.
+// nolint[gocyclo]
+func {{ .Table.Title }}QueryFields(colSet *big.Int) []string {
+	if colSet == nil {
+		return {{ lower .Table.Title }}QueryFieldsAll
+	}
+
+	fields := []string{}
+    {{- range $field := .Table.Fields }}
+    if colSet.Bit({{ $conf.RootPackage }}.{{ $table.Title }}_{{ $field.Title }}) == 1 {
+		fields = append(fields, "{{ lower $field.Name }}")
+	}
+	{{ end -}}
+
+	return fields
+}

@@ -1,0 +1,74 @@
+{
+	"GoFmtCmd": "gofumports -w",
+	"Package": "mysql",
+	"RootPackage": "codegen",
+	"RootPackageInclude": "github.com/efectn/go-orm-benchmarks/codegen",
+	"DirOut": "/home/sl/gospace/go-orm-benchmarks/bench/codegen",
+	"SubPackage": "db",
+	"FilePattern": "%s.go",
+	"TemplateFolder": "/home/sl/gospace/go-orm-benchmarks/bench/codegen/templates/",
+	"Schemas": [
+		{
+			"Name": "orm_benchmark",
+			"Tables": [
+				{
+					"Name": "models",
+					"Fields": [
+						{
+							"Name": "ID",
+							"DBType": "int",
+							"IsAutoincrement": true,
+							"IsPrimaryKey": true
+						},
+						{
+							"Name": "NAME",
+							"DBType": "varchar"
+						},
+						{
+							"Name": "title",
+							"DBType": "varchar"
+						},
+						{
+							"Name": "fax",
+							"DBType": "varchar"
+						},
+						{
+							"Name": "web",
+							"DBType": "varchar"
+						},
+						{
+							"Name": "age",
+							"DBType": "int"
+						},
+						{
+							"Name": "right",
+							"DBType": "tinyint(1)"
+						},
+						{
+							"Name": "counter",
+							"DBType": "bigint"
+						}
+					],
+					"Indices": [
+						{
+							"Name": "primary",
+							"Fields": [
+								"ID"
+							],
+							"IsUnique": true,
+							"Generate": true
+						}
+					],
+					"Ignores": {},
+					"Generate": true
+				}
+			]
+		}
+	],
+	"Database": {
+		"DSN": "root:root@/?parseTime=true",
+		"Schemas": [
+			"orm_benchmark"
+		]
+	}
+}

@@ -22,12 +22,8 @@ import (
 const VERSION = "v1.0.2"
 
 var defaultBenchmarkNames = []string{
-	"beego", "bun", "dbr", "ent",
-	"godb", "gorm", "gorm_prep", "gorp",
-	"pg", "pgx", "pgx_pool", "pop",
-	"raw", "reform", "rel", "sqlboiler",
-	"sqlc", "sqlx", "upper", "xorm",
-	"zorm", "gen", "jet", "sq",
+	"raw", "reform",
+	"sqlx", "jet",
 }
 
 type ListOpts []string
@@ -102,30 +98,12 @@ func main() {
 func runBenchmarks(orms ListOpts) {
 	// Run benchmarks
 	benchmarks := map[string]helper.ORMInterface{
-		"beego":     bench.CreateBeego(),
-		"bun":       bench.CreateBun(),
-		"dbr":       bench.CreateDbr(),
-		"ent":       bench.CreateEnt(),
-		"godb":      bench.CreateGodb(),
-		"gorm":      bench.CreateGorm(),
-		"gorm_prep": bench.CreateGormPrep(),
-		"gorp":      bench.CreateGorp(),
-		"pg":        bench.CreatePg(),
-		"pgx":       bench.CreatePgx(),
-		"pgx_pool":  bench.CreatePgxPool(),
-		"pop":       bench.CreatePop(),
-		"raw":       bench.CreateRaw(),
-		"reform":    bench.CreateReform(),
-		"rel":       bench.CreateRel(),
-		"sqlboiler": bench.CreateSqlboiler(),
-		"sqlc":      bench.CreateSqlc(),
-		"sqlx":      bench.CreateSqlx(),
-		"upper":     bench.CreateUpper(),
-		"xorm":      bench.CreateXorm(),
-		"zorm":      bench.CreateZorm(),
-		"gen":       bench.CreateGen(),
-		"jet":       bench.CreateJet(),
-		"sq":        bench.CreateSq(),
+		"raw":    bench.CreateRaw(),
+		"reform": bench.CreateReform(),
+		"sqlc":   bench.CreateSqlc(),
+		"sqlx":   bench.CreateSqlx(),
+		"gen":    bench.CreateGen(),
+		"jet":    bench.CreateJet(),
 	}
 
 	table := new(tabwriter.Writer)

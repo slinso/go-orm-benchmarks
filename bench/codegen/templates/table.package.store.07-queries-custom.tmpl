@@ -1,0 +1,19 @@
+
+{{- $conf := .Conf -}}
+{{- $table := .Table -}}
+{{- $schema := .Schema }}
+// QueryCustom retrieves many rows from '{{ $schema.Name }}.{{ $table.Name }}' as a slice of {{ $table.Title }} with 1:1 joined data.
+func ({{ $table.StoreReceiver }}) QueryCustom(stmt string, args ...interface{}) ([]*{{ $conf.RootPackage }}.{{ $table.Title }}, error) {
+    dto := &{{ $table.Title }}{}
+    data := &{{ $table.Title }}Slice{}
+    err := {{ $table.Initials }}.queryCustom(data, dto, stmt, args...)
+    if err != nil {
+        {{ $table.Initials }}.log.Error().Err(err).Msg("querycustom")
+        return nil, err
+    }
+    retValues := make([]*{{ $conf.RootPackage }}.{{ $table.Title }}, len(data.data))
+    for i := range data.data {
+        retValues[i] = &data.data[i].{{ $table.Title }}
+    }
+    return retValues, nil
+}
