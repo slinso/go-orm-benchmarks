@@ -1,0 +1,53 @@
+{{- $conf := .Conf -}}
+{{- $table := .Table -}}
+{{- $schema := .Schema }}
+// {{ $table.Title | untitle }}UpsertStmt helper for generating Upsert statement.
+// nolint:gocyclo
+func ({{ $table.StoreReceiver }}) {{ $table.Title | untitle }}UpsertStmt() *sdb.UpsertStatement {
+	upsert := []string{}
+	{{- range $f := $table.OtherFields }}
+		{{- if not (has $f.Name $table.Ignores.Upsert) }}
+        	if {{ $table.Initials }}.colSet == nil || {{ $table.Initials }}.colSet.Bit({{ $conf.RootPackage }}.{{ $table.Title }}_{{ $f.Title }}) == 1 {
+			    upsert = append(upsert, "{{ lower $f.Name }} = VALUES({{ lower $f.Name }})")
+			}
+		{{- end }}
+	{{- end }}
+	sql := &sdb.UpsertStatement{}
+	{{- if $schema.IsMultiTenant }}
+		sql.InsertInto(fmt.Sprintf("{{ $schema.MTSchemaFmt }}", {{ $table.Initials }}.{{ $schema.MTVarName }}) + ".{{ $table.Name }}")
+	{{- else }}
+		sql.InsertInto("{{ $schema.Name }}.{{ $table.Name }}")
+	{{- end }}
+	sql.Columns(
+	{{- range $f := $table.Fields -}}
+		"{{ $f.Name | lower }}",
+	{{- end -}}
+    )
+    sql.OnDuplicateKeyUpdate(upsert)
+	return sql	
+}
+
+// Upsert executes upsert for array of {{ $table.Title }}
+func ({{ $table.StoreReceiver }}) Upsert(data ...*{{ $conf.RootPackage }}.{{ $table.Title }}) (int64, error) {
+	sql := {{ $table.Initials }}.{{ $table.Title | untitle }}UpsertStmt()
+	
+	for _, d := range data {
+		sql.Record(d)
+	}
+
+	if {{ $table.Initials }}.log.Trace().Enabled() {
+		{{ $table.Initials }}.log.Trace().Str("fn", "{{ $table.Title }}Upsert").Str("stmt", sql.String()).Msg("sql")
+	}
+	res, err := {{ $table.Initials }}.db.Exec(sql.Query())
+	if err != nil {
+		{{ $table.Initials }}.log.Error().Err(err).Msg("exec")
+		return -1, err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		{{ $table.Initials }}.log.Error().Err(err).Msg("rowsaffected")
+		return -1, err
+	}
+
+	return affected, nil
+}

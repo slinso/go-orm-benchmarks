@@ -1,0 +1,35 @@
+{{ $table := .Table -}}
+{{ $conf := .Conf -}}
+func ({{ .Table.Initials }} *{{ .Table.Title }}) bind(row []sql.RawBytes, withJoin bool, colSet *big.Int, col *int) {
+    {{- range $field := .Table.Fields }}
+    if colSet == nil || colSet.Bit({{ $conf.RootPackage }}.{{ $table.Title }}_{{ $field.Title }}) == 1 {
+		{{ if $field.IsNullable -}}
+			if row[*col] == nil {
+			{{ $table.Initials }}.{{ $field.Title }} = nil
+			} else {
+				{{ $table.Initials }}.{{ $field.Title }} = new({{ $field.GoType }})
+				*{{ $table.Initials }}.{{ $field.Title }} = {{ $field.MappingFunc }}(row[*col])
+			}
+		{{- else -}}
+			{{ $table.Initials }}.{{ $field.Title }} = {{ $field.MappingFunc }}(row[*col])
+		{{- end }}
+		*col++
+	}
+	{{- end -}}
+	{{ if gt $table.NumUniqueFKs 0 }}
+		if withJoin {
+		{{- template "bindJoin" dict "Table" .Table "Foreignkeys" .Table.ForeignKeys }}
+		}
+	{{ end -}}
+}
+
+{{ define "bindJoin" }}
+    {{- $table := .Table }}
+    {{- range $fk := .Foreignkeys }}
+		{{- if $fk.IsUnique }}
+			{{ lower $fk.CustomName }} := &{{ $fk.RefTableTitle }}{}
+			{{ $table.Initials }}.{{ $fk.CustomName }} = &{{ lower $fk.CustomName }}.{{ $fk.RefTableTitle }}
+			{{ lower $fk.CustomName }}.bind(row, false, colSet, col)
+		{{- end -}}
+	{{ end -}}
+{{ end }}

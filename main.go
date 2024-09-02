@@ -16,15 +16,17 @@ import (
 	"github.com/efectn/go-orm-benchmarks/bench"
 
 	_ "github.com/lib/pq"
+	"github.com/pkg/profile"
 )
 
 // VERSION constant
 const VERSION = "v1.0.2"
 
 var defaultBenchmarkNames = []string{
-	"raw", "reform",
-	"sqlx", "jet",
+	"pgx", "raw", "codegen", "newgen",
 }
+
+var profmode = flag.String("profile.mode", "", "enable profiling mode, one of [cpu, mem, mutex, block]")
 
 type ListOpts []string
 
@@ -70,6 +72,21 @@ func main() {
 		os.Exit(0)
 	}
 
+	// ****************************************************************
+	// profiling mode
+	// ****************************************************************
+	switch *profmode {
+	case "cpu":
+		defer profile.Start(profile.CPUProfile).Stop()
+	case "mem":
+		defer profile.Start(profile.MemProfileRate(1), profile.ProfilePath(".")).Stop()
+	case "mutex":
+		defer profile.Start(profile.MutexProfile).Stop()
+	case "block":
+		defer profile.Start(profile.BlockProfile).Stop()
+	default:
+	}
+
 	// Check it is all
 	if len(orms) == 0 {
 		all = true
@@ -98,12 +115,14 @@ func main() {
 func runBenchmarks(orms ListOpts) {
 	// Run benchmarks
 	benchmarks := map[string]helper.ORMInterface{
-		"raw":    bench.CreateRaw(),
-		"reform": bench.CreateReform(),
-		"sqlc":   bench.CreateSqlc(),
-		"sqlx":   bench.CreateSqlx(),
-		"gen":    bench.CreateGen(),
-		"jet":    bench.CreateJet(),
+		"raw":     bench.CreateRaw(),
+		"reform":  bench.CreateReform(),
+		"sqlc":    bench.CreateSqlc(),
+		"sqlx":    bench.CreateSqlx(),
+		"gen":     bench.CreateGen(),
+		"newgen":  bench.CreateNewGen(),
+		"jet":     bench.CreateJet(),
+		"codegen": bench.CreateCodegen(),
 	}
 
 	table := new(tabwriter.Writer)

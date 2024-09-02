@@ -2,6 +2,7 @@ package bench
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/efectn/go-orm-benchmarks/helper"
@@ -124,10 +125,14 @@ func (reform *Reform) ReadSlice(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 
+	var data []reformware.Struct
+	var err error
 	for i := 0; i < b.N; i++ {
-		_, err := reform.conn.SelectAllFrom(r.ReformModelsTable, "WHERE id > 0 LIMIT 100")
+		data, err = reform.conn.SelectAllFrom(r.ReformModelsTable, "WHERE id > 0 LIMIT 100")
 		if err != nil {
 			helper.SetError(b, reform.Name(), "ReadSlice", err.Error())
 		}
 	}
+
+	fmt.Println("reform len", len(data))
 }

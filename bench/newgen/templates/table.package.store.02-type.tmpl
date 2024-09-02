@@ -1,0 +1,21 @@
+
+// {{ .Table.Title }} represents a row from '{{ .Table.Name }}'.
+type {{ .Table.Title }} struct {
+	{{ .Conf.RootPackage }}.{{ .Table.Title }}
+}
+
+// new implements Bindable.new
+func ({{ .Table.Initials }} *{{ .Table.Title }}) new() Bindable {
+	return &{{ .Table.Title }}{}
+}
+
+// helper struct for common query operations.
+type {{ .Table.Title }}Slice struct {
+	data []*{{ .Table.Title }}
+}
+
+// append implements BindableSlice.append
+func ({{ .Table.Initials }} *{{ .Table.Title }}Slice) append(d Bindable) {
+	{{ .Table.Initials }}.data = append({{ .Table.Initials }}.data, d.(*{{ .Table.Title }}))
+}
+

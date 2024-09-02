@@ -1,0 +1,37 @@
+{{ $conf := .Conf }}
+{{ $schema := .Schema }}
+{{ $table := .Table }}
+{{ range $index := $table.Indices }}
+	{{ if $index.Generate -}}
+	{{- if $index.IsUnique -}}
+        // {{ $index.FuncName }} retrieves a row from '{{ $schema.Name }}.{{ $table.Name }}' as a {{ $table.Title }}.
+	{{- else -}}
+        // {{ $index.FuncName }} retrieves multiple rows from '{{ $schema.Name }}.{{ $table.Name }}' as a slice of {{ $table.Title }}.
+	{{- end }}
+//
+// Generated from index '{{ $index.Name }}'.
+// nolint[goconst]
+func ({{ $table.StoreReceiver }}) {{ $index.FuncName }}(
+	{{- range $i, $f := $index.Fields }}
+		{{- if gt $i 0 }}, {{ end -}}
+		{{ (index $table.Fields (index $table.FieldMapping $f)).ParamName }} {{ (index $table.Fields (index $table.FieldMapping $f)).GoType }}
+	{{- end -}}
+	) ({{ if not $index.IsUnique }}[]{{ end }}*{{ $conf.RootPackage }}.{{ $table.Title }}, error) {
+        {{ $table.Initials }}.where = "
+        {{- range $i, $f := $index.Fields }}
+		{{- if gt $i 0 }} AND {{ end -}}A.{{ (index $table.Fields (index $table.FieldMapping $f)).Name }} = ?
+        {{- end -}}
+        "
+        {{ if $index.IsUnique -}}
+           return {{ $table.Initials }}.One(
+        {{- else -}}
+            return {{ $table.Initials }}.Query(
+        {{- end }}
+        {{- range $i, $f := $index.Fields -}}
+            {{- if gt $i 0 }}, {{ end -}}
+            {{- (index $table.Fields (index $table.FieldMapping $f)).ParamName -}}
+        {{- end -}}
+        )
+    }
+    {{- end -}}
+{{ end }}

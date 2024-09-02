@@ -1,0 +1,20 @@
+{{- $conf := .Conf -}}
+{{- $table := .Table -}}
+{{- $schema := .Schema }}
+// Truncate deletes all rows from {{ $table.Title }}.
+func ({{ $table.StoreReceiver }}) Truncate() error {
+	sql := sdb.NewSQLStatement()
+	{{- if $schema.IsMultiTenant }}
+		sql.AppendRaw("TRUNCATE ", fmt.Sprintf("{{ $schema.MTSchemaFmt }}", {{ $table.Initials }}.{{ $schema.MTVarName }}), ".{{ $table.Name }}")
+	{{- else }}
+		sql.Append("TRUNCATE {{ $schema.Name }}.{{ $table.Name }}")
+	{{- end }}
+	if {{ $table.Initials }}.log.Trace().Enabled() {
+		{{ $table.Initials }}.log.Trace().Str("fn", "{{ $schema.Name }}.{{ $table.Name }}.Truncate").Str("stmt", sql.String()).Msg("sql")
+	}
+	_, err := {{ $table.Initials }}.db.Exec(sql.Query())
+	if err != nil {
+	    {{ $table.Initials }}.log.Error().Err(err).Msg("exec")
+	}
+	return err
+}

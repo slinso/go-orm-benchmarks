@@ -1,0 +1,80 @@
+{{- $schema := .Schema }}
+{{- $conf := .Conf }}
+// {{ .Table.Title }}Store is used to query for '{{ .Table.Title }}' records.
+type {{ .Table.Title }}Store struct {
+	Store
+	ctx *{{ $conf.RootPackage }}.Context
+}
+
+// New{{ .Table.Title }}Store return DAO Store for {{ .Table.Title }}
+{{- if $schema.IsMultiTenant }}
+func New{{ .Table.Title }}Store(ctx *{{ $conf.RootPackage }}.Context, {{ $schema.MTVarName }} {{ $schema.MTVarType }}, conn Execer) *{{ .Table.Title }}Store {
+{{- else }}
+func New{{ .Table.Title }}Store(ctx *{{ $conf.RootPackage }}.Context, conn Execer) *{{ .Table.Title }}Store {
+{{- end }}
+	{{ .Table.Initials }} := &{{ .Table.Title }}Store{}
+	{{ .Table.Initials }}.db = conn
+	{{ .Table.Initials }}.withJoin = true
+	{{ .Table.Initials }}.joinType = sdb.LEFT
+	{{ .Table.Initials }}.batch = 1000
+	{{ .Table.Initials }}.log = ctx.Log
+	{{ .Table.Initials }}.ctx = ctx
+	{{- if $schema.IsMultiTenant }}
+		{{ .Table.Initials }}.{{ $schema.MTVarName }} = {{ $schema.MTVarName }}
+	{{- end }}
+	return {{ .Table.Initials }}
+}
+
+// WithoutJoins won't execute JOIN when querying for records.
+func ({{ .Table.Initials }} *{{ .Table.Title }}Store) WithoutJoins() *{{ .Table.Title }}Store {
+	{{ .Table.Initials }}.withJoin = false
+	return {{ .Table.Initials }}
+}
+
+// Where sets local sql, that will be appended to SELECT.
+func ({{ .Table.Initials }} *{{ .Table.Title }}Store) Where(sql string) *{{ .Table.Title }}Store {
+	{{ .Table.Initials }}.where = sql
+	return {{ .Table.Initials }}
+}
+
+// OrderBy sets local sql, that will be appended to SELECT.
+func ({{ .Table.Initials }} *{{ .Table.Title }}Store) OrderBy(sql string) *{{ .Table.Title }}Store {
+	{{ .Table.Initials }}.orderBy = sql
+	return {{ .Table.Initials }}
+}
+
+// GroupBy sets local sql, that will be appended to SELECT.
+func ({{ .Table.Initials }} *{{ .Table.Title }}Store) GroupBy(sql string) *{{ .Table.Title }}Store {
+	{{ .Table.Initials }}.groupBy = sql
+	return {{ .Table.Initials }}
+}
+
+// Limit result set size
+func ({{ .Table.Initials }} *{{ .Table.Title }}Store) Limit(n int) *{{ .Table.Title }}Store {
+	{{ .Table.Initials }}.limit = n
+	return {{ .Table.Initials }}
+}
+
+// Offset used, if a limit is provided
+func ({{ .Table.Initials }} *{{ .Table.Title }}Store) Offset(n int) *{{ .Table.Title }}Store {
+	{{ .Table.Initials }}.offset = n
+	return {{ .Table.Initials }}
+}
+
+// JoinType sets join statement type (Default: INNER | LEFT | RIGHT | OUTER).
+func ({{ .Table.Initials }} *{{ .Table.Title }}Store) JoinType(jt string) *{{ .Table.Title }}Store {
+	{{ .Table.Initials }}.joinType = jt
+	return {{ .Table.Initials }}
+}
+
+// Columns sets bits for specific columns.
+func ({{ .Table.Initials }} *{{ .Table.Title }}Store) Columns(cols ...int) *{{ .Table.Title }}Store {
+	{{ .Table.Initials }}.Store.Columns(cols...)
+	return {{ .Table.Initials }}
+}
+
+// SetBits sets complete BitSet for use in UpdatePartial.
+func ({{ $table.StoreReceiver }}) SetBits(colSet *big.Int) *{{ .Table.Title }}Store {
+	{{ $table.Initials }}.colSet = colSet
+	return {{ $table.Initials }}
+}

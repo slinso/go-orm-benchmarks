@@ -1,0 +1,8 @@
+{{- $conf := .Conf -}}
+{{- $table := .Table -}}
+{{- $schema := .Schema }}
+// Query retrieves many rows from '{{ $schema.Name }}.{{ $table.Name }}' as a slice of {{ $table.Title }} with 1:1 joined data.
+func ({{ $table.StoreReceiver }}) Query(args ...interface{}) ([]*{{ $conf.RootPackage }}.{{ $table.Title }}, error) {
+	stmt := {{ $table.Initials }}.selectStatement()
+	return {{ $table.Initials }}.QueryCustom(stmt.Query(), args...)
+}

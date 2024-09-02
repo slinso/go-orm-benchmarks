@@ -1,0 +1,59 @@
+{{- $table := .Table -}}
+{{- $schema := .Schema -}}
+func ({{ $table.Receiver }}Store) selectStatement() *sdb.SQLStatement {
+	sql := sdb.NewSQLStatement()
+	sql.Append("SELECT")
+	sql.Fields("", "{{ $table.Alias}}", {{ $table.Title }}QueryFields({{ $table.Initials }}.colSet))
+	{{- if gt $table.NumUniqueFKs 0 }}
+		if {{ $table.Initials }}.withJoin {
+            {{- range $join := $table.Joins }}
+                sql.Fields(", ", "{{ $join.Alias }}", {{ $join.Title }}QueryFields({{ $join.Initials }}.colSet))
+            {{- end }}
+			{{- if $schema.IsMultiTenant }}
+				sql.AppendRaw(" FROM ", fmt.Sprintf("{{ $schema.MTSchemaFmt }}", {{ $table.Initials }}.{{ $schema.MTVarName }}), ".{{ $table.Name }} A ")
+			{{- else }}
+				sql.Append(" FROM {{ $schema.Name }}.{{ $table.Name }} A ")
+			{{- end }}
+            {{- range $join := $table.Joins }}
+				{{- if $schema.IsMultiTenant }}
+					sql.AppendRaw({{ $join.Initials }}.joinType, " JOIN ", fmt.Sprintf("{{ $schema.MTSchemaFmt }}", {{ $table.Initials }}.{{ $schema.MTVarName }}), ".{{ $join.Name }} {{ $join.Alias }} ON (
+				{{- else }}
+					sql.Append({{ $join.Initials }}.joinType, " JOIN {{ $join.Schema }}.{{ $join.Name }} {{ $join.Alias }} ON (
+				{{- end }}
+                    {{- range $i, $fk := $join.Fields -}}
+                        {{- if gt $i 0 }} AND {{ end -}} 
+                        {{ $fk.Alias }}.{{ $fk.Name}} = {{ $fk.RefAlias }}.{{ $fk.RefName }}
+                    {{- end -}}
+                ) ")
+            {{- end }}
+		} else {
+			{{- if $schema.IsMultiTenant }}
+				sql.AppendRaw(" FROM ", fmt.Sprintf("{{ $schema.MTSchemaFmt }}", {{ $table.Initials }}.{{ $schema.MTVarName }}), ".{{ $table.Name }} A ")
+			{{- else }}
+				sql.Append(" FROM {{ $schema.Name }}.{{ $table.Name }} A ")
+			{{- end }}
+        }
+    {{- else }}
+		{{- if $schema.IsMultiTenant }}
+			sql.AppendRaw(" FROM ", fmt.Sprintf("{{ $schema.MTSchemaFmt }}", {{ $table.Initials }}.{{ $schema.MTVarName }}), ".{{ $table.Name }} A ")
+		{{- else }}
+			sql.Append(" FROM {{ $schema.Name }}.{{ $table.Name }} A ")
+		{{- end }}
+    {{- end }}	
+	if {{ $table.Initials }}.where != "" {
+	    sql.Append("WHERE", {{ $table.Initials }}.where)
+	}
+	if {{ $table.Initials }}.groupBy != "" {
+	    sql.Append("GROUP BY", {{ $table.Initials }}.groupBy)
+	}
+	if {{ $table.Initials }}.orderBy != "" {
+	    sql.Append("ORDER BY", {{ $table.Initials }}.orderBy)
+	}
+	if {{ $table.Initials }}.limit > 0 {
+	    sql.AppendRaw("LIMIT ", {{ $table.Initials }}.limit)
+        if {{ $table.Initials }}.offset > 0 {
+            sql.AppendRaw(",", {{ $table.Initials }}.offset)
+        }
+	}
+	return sql
+}

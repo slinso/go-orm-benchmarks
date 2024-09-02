@@ -1,0 +1,14 @@
+{{- $conf := .Conf -}}
+{{- $table := .Table -}}
+{{- $schema := .Schema }}
+// One retrieves a row from '{{ $schema.Name }}.{{ $table.Name }}' as a {{ $table.Title }} with 1:1 joined data.
+func ({{ $table.StoreReceiver }}) One(args ...interface{}) (*{{ $conf.RootPackage }}.{{ $table.Title }}, error) {
+    data := &{{ $table.Title }}{}
+
+ 	err := {{ $table.Initials }}.one(data, {{ $table.Initials }}.selectStatement(), args...)
+	if err != nil {
+        {{ $table.Initials }}.log.Error().Err(err).Msg("query one")
+        return nil, err
+	}
+	return &data.{{ $table.Title }}, nil
+}

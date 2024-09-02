@@ -1,0 +1,40 @@
+{{- $conf := .Conf -}}
+{{- $table := .Table -}}
+{{- $schema := .Schema }}
+// ToJSON writes a single object to the buffer.
+// nolint[gocylco]
+func ({{ $table.StoreReceiver }}) ToJSON(t *sdb.JsonBuffer, data *{{ $table.Title }}) {
+	prepend := "{"
+	{{- $lenFields := sub (len $table.Fields) 1 }}
+	{{ range $i, $f := $table.Fields -}}
+		if {{ $table.Initials }}.colSet == nil || {{ $table.Initials }}.colSet.Bit({{ $conf.RootPackage }}.{{ $table.Title }}_{{ $f.Title }}) == 1 {
+		{{- if $f.IsNullable }}
+			t.{{ $f.JsonFunc }}(prepend, "{{ $f.Name | lower }}", *data.{{ $f.Title }})
+		{{- else }}
+			t.{{ $f.JsonFunc }}(prepend, "{{ $f.Name | lower }}", data.{{ $f.Title }})
+		{{- end }}
+		{{- if ne $i $lenFields }}
+			prepend = ","
+		{{- end }}
+		}
+	{{ end -}}
+	t.S(`}`)
+}
+
+// ToJSONArray writes a slice to the named array.
+func ({{ $table.StoreReceiver }}) ToJSONArray(w io.Writer, data []*{{ $table.Title }}, name string) {
+	t := sdb.NewJsonBuffer()
+	t.SS(`{"`, name, `":[`)
+	for i := range data {
+		if i > 0 {
+			t.S(",")
+		}
+		{{ $table.Initials }}.ToJSON(t, data[i])
+	}
+
+	t.S("]}")
+	_, err := w.Write(t.Bytes())
+	if err != nil {
+		panic(err)
+	}
+}
